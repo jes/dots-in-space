@@ -4,6 +4,7 @@ let lastwidth;
 let lastheight;
 
 let player;
+let canvas;
 
 // Input state
 const input = {
@@ -18,7 +19,12 @@ const input = {
 };
 
 function init() {
+    canvas = document.getElementById('canvas');
     player = new Player();
+    
+    canvas.addEventListener('click', () => {
+        canvas.requestPointerLock();
+    });
 
     render();
 }
@@ -57,6 +63,10 @@ function step() {
     laststep = now;
 
     player.step(dt, input);
+
+    // Reset mouse movement after each frame
+    input.mouse.movementX = 0;
+    input.mouse.movementY = 0;
 }
 
 function resize(canvas) {
@@ -81,10 +91,16 @@ document.addEventListener('keyup', (e) => {
 
 // Mouse events
 document.addEventListener('mousemove', (e) => {
+    if (document.pointerLockElement === canvas) {
+        input.mouse.movementX = e.movementX || 0;
+        input.mouse.movementY = e.movementY || 0;
+        console.log(input.mouse.movementX, input.mouse.movementY);
+    } else {
+        input.mouse.movementX = 0;
+        input.mouse.movementY = 0;
+    }
     input.mouse.x = e.clientX;
     input.mouse.y = e.clientY;
-    input.mouse.movementX = e.movementX;
-    input.mouse.movementY = e.movementY;
 });
 
 document.addEventListener('mousedown', (e) => {
@@ -96,6 +112,15 @@ document.addEventListener('mousedown', (e) => {
 document.addEventListener('mouseup', (e) => {
     if (e.button === 0) { // Left click
         input.mouse.clicked = false;
+    }
+});
+
+// Add pointer lock change handler
+document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === canvas) {
+        canvas.style.cursor = 'none';
+    } else {
+        canvas.style.cursor = 'pointer';
     }
 });
 

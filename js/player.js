@@ -23,7 +23,7 @@ Player.prototype.step = function(dt, input) {
         this.facing = this.facing.rotateAround(up, -input.mouse.movementX * sensitivity);
         
         // Pitch (rotate around right vector)
-        this.facing = this.facing.rotateAround(right, -input.mouse.movementY * sensitivity);
+        this.facing = this.facing.rotateAround(right, input.mouse.movementY * sensitivity);
         this.facing = this.facing.normalize();
     }
 
@@ -67,22 +67,10 @@ Player.prototype.step = function(dt, input) {
 };
 
 Player.prototype.getRightVector = function() {
-    // Start with a base right vector by rotating (1,0,0) to match our facing direction
-    let baseRight = new V3d(1, 0, 0);
-    
-    // First, find the angle between our facing and world forward (0,0,1)
+    // Get right vector by crossing facing direction with world forward
     let worldForward = new V3d(0, 0, 1);
-    let angle = Math.acos(worldForward.dot(this.facing));
-    let rotationAxis = worldForward.cross(this.facing).normalize();
-    
-    // If facing is parallel to world forward, use world right as rotation axis
-    if (rotationAxis.length() < 0.0001) {
-        rotationAxis = new V3d(1, 0, 0);
-    }
-    
-    // Rotate our base right vector to align with facing direction
-    baseRight = baseRight.rotateAround(rotationAxis, angle);
+    let right = this.facing.cross(worldForward).normalize().mul(-1);
     
     // Apply roll rotation around the facing vector
-    return baseRight.rotateAround(this.facing, this.roll);
+    return right.rotateAround(this.facing, this.roll);
 };
