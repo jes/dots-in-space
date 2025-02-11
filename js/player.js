@@ -55,6 +55,11 @@ Player.prototype.step = function(dt, input) {
         this.vel = this.vel.add(moveDir.mul(dt * 10));
     }
 
+    // TODO: gravity?
+    /*if (this.pos.length() > 0.1) {
+        this.vel = this.vel.add(this.pos.mul(-1).normalize().mul(dt * 0.1));
+    }*/
+
     this.pos = this.pos.add(this.vel.mul(dt));
     this.vel = this.vel.mul(0.999);
 
