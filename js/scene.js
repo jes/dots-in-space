@@ -4,7 +4,7 @@ function Scene(ctx) {
     this.ctx = ctx;
     this.viewpoint = new V3d(0,0,0);
     this.viewdir = new V3d(0,1,0);  // Looking along +Y by default
-    this.viewscale = 1200;
+    this.fov = 60; // Field of view in degrees
     this.distscale = 2;
     this.circles = [];
     
@@ -53,10 +53,11 @@ Scene.prototype.drawCircle = function(pos, r, col) {
 Scene.prototype.render = function() {
     this.ctx.globalCompositeOperation = 'lighter';
     this.ctx.globalAlpha = 0.2;
-    // get the nearest circles first
-    this.circles.sort((a,b) => {
+
+    // sort circles by distance (not needed in additive blending mode)
+    /*this.circles.sort((a,b) => {
         return a.dist - b.dist;
-    });
+    });*/
 
     // TODO: circle occlusion; set circle.occluded = true if it is occluded by a dark sphere
 
@@ -81,19 +82,22 @@ Scene.prototype.project = function(pos, r) {
     const viewY = posrel.dot(this._forward);
     const viewZ = posrel.dot(this._up);
     
-    // things behind the viewer are not visible
     if (viewY <= 0) return null;
 
     const dist = this.distscale * Math.sqrt(viewX*viewX + viewY*viewY + viewZ*viewZ);
-
-    // things too close are not visible
     if (dist < 0.5) return null;
 
-    const scaleratio = this.viewscale * this.ctx.canvas.width / 640;
-
-    const screenx = (this.ctx.canvas.width/2) + scaleratio * (viewX / viewY);
-    const screeny = (this.ctx.canvas.height/2) - scaleratio * (viewZ / viewY);
-    const screenr = scaleratio * (r / viewY); // px
+    // Convert FOV to radians and calculate projection scale
+    const fovRadians = (this.fov * Math.PI) / 180;
+    const aspectRatio = this.ctx.canvas.width / this.ctx.canvas.height;
+    
+    // Calculate projection scale based on FOV
+    // tan(fov/2) gives us the ratio of half-width to distance
+    const projectionScale = 1.0 / Math.tan(fovRadians / 2);
+    
+    const screenx = (this.ctx.canvas.width/2) + (this.ctx.canvas.width/2) * (viewX / viewY) * projectionScale;
+    const screeny = (this.ctx.canvas.height/2) - (this.ctx.canvas.width/2) * (viewZ / viewY) * projectionScale;
+    const screenr = (this.ctx.canvas.width/2) * (r / viewY) * projectionScale;
 
     return {
         x: screenx,

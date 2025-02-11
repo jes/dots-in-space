@@ -85,3 +85,16 @@ V3d.prototype.angleBetween = function(v) {
     const mags = this.length() * v.length();
     return Math.acos(Math.max(-1, Math.min(1, dot / mags)));
 };
+
+V3d.prototype.rotateAround = function(axis, theta) {
+    // Rodrigues rotation formula implementation
+    // Rotates this vector around arbitrary axis by theta radians
+    const k = axis.normalize();
+    const cos_theta = Math.cos(theta);
+    const sin_theta = Math.sin(theta);
+    
+    // v * cos(θ) + (k × v) * sin(θ) + k * (k · v) * (1 - cos(θ))
+    return this.mul(cos_theta)
+        .add(k.cross(this).mul(sin_theta))
+        .add(k.mul(k.dot(this) * (1 - cos_theta)));
+};

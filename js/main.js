@@ -36,6 +36,7 @@ function render() {
     scene.setCamera(player.pos, player.facing, player.roll);
 
     scene.drawCircle(new V3d(0, 10, 0), 1, 'red');
+    scene.drawCircle(new V3d(1, 5, 0), 0.5, 'blue');
 
     player.render(scene);
     scene.render();
