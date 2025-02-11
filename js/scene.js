@@ -3,18 +3,49 @@ const fullcircle = 180*Math.PI;
 function Scene(ctx) {
     this.ctx = ctx;
     this.viewpoint = new V3d(0,0,0);
+    this.viewdir = new V3d(0,1,0);  // Looking along +Y by default
     this.viewscale = 1200;
     this.distscale = 2;
     this.circles = [];
+    
+    // Initialize view basis vectors
+    this._right = new V3d(1,0,0);
+    this._up = new V3d(0,0,1);
+    this._forward = this.viewdir.normalize();
 }
 
-Scene.prototype.drawCircle = function(pos, r, col, opts) {
+Scene.prototype.setCamera = function(position, direction, roll = 0) {
+    this.viewpoint = position;
+    this.viewdir = direction.normalize();
+    
+    // Precompute the orthonormal basis
+    this._forward = this.viewdir;
+    this._right = new V3d(0, 0, 1).cross(this._forward).normalize();
+    // Handle the case where forward is parallel to up
+    if (this._right.length() < 0.001) {
+        this._right.x = 1;  // Choose arbitrary right vector
+    }
+    this._up = this._forward.cross(this._right).normalize();
+
+    // Apply roll rotation around forward axis if specified
+    if (roll !== 0) {
+        const cos = Math.cos(roll);
+        const sin = Math.sin(roll);
+        
+        // Rotate right and up vectors around forward axis
+        const newRight = this._right.scale(cos).add(this._up.scale(sin));
+        const newUp = this._up.scale(cos).sub(this._right.scale(sin));
+        
+        this._right = newRight.normalize();
+        this._up = newUp.normalize();
+    }
+};
+
+Scene.prototype.drawCircle = function(pos, r, col) {
     let circle = this.project(pos, r);
     if (!circle) return;
     circle.col = col;
     circle.roady = pos.y;
-
-    if (opts && opts.no_occlude) circle.no_occlude = true;
 
     this.circles.push(circle);
 };
@@ -43,25 +74,26 @@ Scene.prototype.render = function() {
 };
 
 Scene.prototype.project = function(pos, r) {
-    const dy = 0.1;
-    const dx = 0;
-    const theta = Math.atan2(dx,dy);
-    const posrel1 = pos.sub(this.viewpoint);
-    const posrel = posrel1.rotate(theta, 'z');
-
+    const posrel = pos.sub(this.viewpoint);
+    
+    // Use precomputed basis vectors
+    const viewX = posrel.dot(this._right);
+    const viewY = posrel.dot(this._forward);
+    const viewZ = posrel.dot(this._up);
+    
     // things behind the viewer are not visible
-    if (posrel.y <= 0) return null;
+    if (viewY <= 0) return null;
 
-    const dist = this.distscale * posrel.length();
+    const dist = this.distscale * Math.sqrt(viewX*viewX + viewY*viewY + viewZ*viewZ);
 
     // things too close are not visible
     if (dist < 0.5) return null;
 
     const scaleratio = this.viewscale * this.ctx.canvas.width / 640;
 
-    const screenx = (this.ctx.canvas.width/2) + scaleratio * (posrel.x / dist);
-    const screeny = (this.ctx.canvas.height/2) - scaleratio * (posrel.z / dist);
-    const screenr = scaleratio * (r / dist); // px
+    const screenx = (this.ctx.canvas.width/2) + scaleratio * (viewX / viewY);
+    const screeny = (this.ctx.canvas.height/2) - scaleratio * (viewZ / viewY);
+    const screenr = scaleratio * (r / viewY); // px
 
     return {
         x: screenx,

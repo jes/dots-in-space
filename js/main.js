@@ -1,15 +1,22 @@
 let laststep = null;
-let observer;
 
 let lastwidth;
 let lastheight;
 
-const started = Date.now();
-const musiclabeltime = 5000; // ms
+let player;
+
+// Input state
+const input = {
+    keys: {},
+    mouse: {
+        x: 0,
+        y: 0,
+        clicked: false
+    }
+};
 
 function init() {
-    const canvas = document.getElementById('canvas');
-    resize(canvas);
+    player = new Player();
 
     render();
 }
@@ -26,20 +33,11 @@ function render() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const scene = new Scene(ctx);
-    scene.viewpoint = new V3d(0, 0, 0);
+    scene.setCamera(player.pos, player.facing, player.roll);
 
-    const label = document.getElementById('clickformusic');
-    label.style.top = `${canvas.height/2 - 100}px`;
-    label.style.left = `${canvas.width/2 - label.clientWidth/2}px`;
+    scene.drawCircle(new V3d(0, 10, 0), 1, 'red');
 
-    const time = Date.now() - started;
-    if (time < musiclabeltime) {
-        const col = (musiclabeltime-time) * (200/musiclabeltime);
-        label.style.color = `rgb(${col}, ${col}, ${col})`;
-    } else {
-        label.style.display = 'none';
-    }
-
+    player.render(scene);
     scene.render();
 
     window.requestAnimationFrame(render);
@@ -54,6 +52,8 @@ function step() {
 
     const dt = (now - laststep) / 1000;
     laststep = now;
+
+    player.step(dt, input);
 }
 
 function resize(canvas) {
@@ -67,11 +67,31 @@ function resize(canvas) {
     ctx.fill();
 }
 
-init();
+// Keyboard events
+document.addEventListener('keydown', (e) => {
+    input.keys[e.key.toLowerCase()] = true;
+});
 
-let playing = false;
-document.getElementById('canvas').onclick = function() {
-    if (playing) document.getElementById('audio').pause();
-    else document.getElementById('audio').play();
-    playing = !playing;
-}
+document.addEventListener('keyup', (e) => {
+    input.keys[e.key.toLowerCase()] = false;
+});
+
+// Mouse events
+document.addEventListener('mousemove', (e) => {
+    input.mouse.x = e.clientX;
+    input.mouse.y = e.clientY;
+});
+
+document.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { // Left click
+        input.mouse.clicked = true;
+    }
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (e.button === 0) { // Left click
+        input.mouse.clicked = false;
+    }
+});
+
+init();
