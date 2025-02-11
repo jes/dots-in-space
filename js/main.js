@@ -116,7 +116,6 @@ document.addEventListener('mousemove', (e) => {
     if (document.pointerLockElement === canvas) {
         input.mouse.movementX = e.movementX || 0;
         input.mouse.movementY = e.movementY || 0;
-        console.log(input.mouse.movementX, input.mouse.movementY);
     } else {
         input.mouse.movementX = 0;
         input.mouse.movementY = 0;
