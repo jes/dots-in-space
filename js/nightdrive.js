@@ -26,8 +26,7 @@ function render() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const scene = new Scene(ctx);
-    scene.viewpoint = new V2d(0, 0);
-    scene.viewz = 1.0; // 1 metre off ground
+    scene.viewpoint = new V3d(0, 0, 0);
 
     const label = document.getElementById('clickformusic');
     label.style.top = `${canvas.height/2 - 100}px`;
