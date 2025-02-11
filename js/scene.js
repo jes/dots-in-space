@@ -33,8 +33,8 @@ Scene.prototype.setCamera = function(position, direction, roll = 0) {
         const sin = Math.sin(roll);
         
         // Rotate right and up vectors around forward axis
-        const newRight = this._right.scale(cos).add(this._up.scale(sin));
-        const newUp = this._up.scale(cos).sub(this._right.scale(sin));
+        const newRight = this._right.mul(cos).add(this._up.mul(sin));
+        const newUp = this._up.mul(cos).sub(this._right.mul(sin));
         
         this._right = newRight.normalize();
         this._up = newUp.normalize();
