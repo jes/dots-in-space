@@ -6,7 +6,6 @@ function Player() {
 }
 
 Player.prototype.render = function(scene) {
-    scene.drawCircle(new V3d(0, 10, 0), 1, 'red');
 };
 
 Player.prototype.step = function(dt, input) {
@@ -57,7 +56,12 @@ Player.prototype.step = function(dt, input) {
     }
 
     this.pos = this.pos.add(this.vel.mul(dt));
-    this.vel = this.vel.mul(0.99);
+    this.vel = this.vel.mul(0.999);
+
+    if (this.pos.length() > WORLD_RADIUS) {
+        // TODO: sparks, we've hit the celestial sphere
+        this.vel = this.vel.mul(-1);
+    }
 
     // Handle mouse input
     if (input.mouse.clicked) {

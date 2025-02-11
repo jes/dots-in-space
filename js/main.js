@@ -1,10 +1,14 @@
 let laststep = null;
 
+let WORLD_RADIUS = 50;
+
 let lastwidth;
 let lastheight;
 
 let player;
 let canvas;
+
+let stars = [];
 
 // Input state
 const input = {
@@ -25,6 +29,19 @@ function init() {
     canvas.addEventListener('click', () => {
         canvas.requestPointerLock();
     });
+
+    for (let i = 0; i < 1000; i++) {
+        // Generate random spherical coordinates
+        const theta = Math.random() * 2 * Math.PI;  // Azimuthal angle (0 to 2π)
+        const phi = Math.acos(2 * Math.random() - 1);  // Polar angle (0 to π)
+        
+        // Convert spherical to Cartesian coordinates
+        const x = WORLD_RADIUS * Math.sin(phi) * Math.cos(theta);
+        const y = WORLD_RADIUS * Math.sin(phi) * Math.sin(theta);
+        const z = WORLD_RADIUS * Math.cos(phi);
+        
+        stars.push(new V3d(x, y, z));
+    }
 
     render();
 }
@@ -47,6 +64,11 @@ function render() {
     scene.drawCircle(new V3d(1, 5, 0), 0.5, 'blue');
 
     player.render(scene);
+    
+    for (let i = 0; i < stars.length; i++) {
+        scene.drawCircle(stars[i], 0.1, 'white');
+    }
+
     scene.render();
 
     window.requestAnimationFrame(render);

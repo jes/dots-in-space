@@ -4,7 +4,7 @@ function Scene(ctx) {
     this.ctx = ctx;
     this.viewpoint = new V3d(0,0,0);
     this.viewdir = new V3d(0,1,0);  // Looking along +Y by default
-    this.fov = 60; // Field of view in degrees
+    this.fov = 90; // Field of view in degrees
     this.distscale = 2;
     this.circles = [];
     
