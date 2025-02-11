@@ -14,9 +14,6 @@ Scene.prototype.drawCircle = function(pos, r, col, opts) {
     circle.col = col;
     circle.roady = pos.y;
 
-    let ground = this.project(pos, 0, 0);
-    circle.yground = ground.y;
-
     if (opts && opts.no_occlude) circle.no_occlude = true;
 
     this.circles.push(circle);
@@ -27,26 +24,19 @@ Scene.prototype.render = function() {
     this.ctx.globalAlpha = 0.2;
     // get the nearest circles first
     this.circles.sort((a,b) => {
-        return a.roady - b.roady;
+        return a.dist - b.dist;
     });
 
-    // work out which circles are occluded by the road
-    let highestroad = this.ctx.canvas.height;
-    for (circle of this.circles) {
-        if (circle.yground < highestroad) highestroad = circle.yground;
-        if (circle.y > highestroad && !circle.no_occlude) circle.occluded = true;
-    }
+    // TODO: circle occlusion; set circle.occluded = true if it is occluded by a dark sphere
 
-    for (circle of this.circles) {
+    for (let circle of this.circles) {
         if (circle.occluded) continue;
 
         this.ctx.fillStyle = circle.col;
 
-        for (let k = 1.0; k > 0; k -= 0.15) {
-            this.ctx.beginPath();
-            this.ctx.arc(circle.x, circle.y, circle.r*1.5*k*k, 0, fullcircle);
-            this.ctx.fill();
-        }
+        this.ctx.beginPath();
+        this.ctx.arc(circle.x, circle.y, circle.r, 0, fullcircle);
+        this.ctx.fill();
     }
     this.ctx.globalCompositeOperation = 'source-over';
     this.ctx.globalAlpha = 1.0;
@@ -62,7 +52,7 @@ Scene.prototype.project = function(pos, r) {
     // things behind the viewer are not visible
     if (posrel.y <= 0) return null;
 
-    const dist = this.distscale * Math.sqrt(posrel.y*posrel.y + posrel.z*posrel.z);
+    const dist = this.distscale * posrel.length();
 
     // things too close are not visible
     if (dist < 0.5) return null;
@@ -76,6 +66,7 @@ Scene.prototype.project = function(pos, r) {
     return {
         x: screenx,
         y: screeny,
+        dist: dist,
         r: screenr,
     };
 };
