@@ -11,7 +11,9 @@ const input = {
     mouse: {
         x: 0,
         y: 0,
-        clicked: false
+        clicked: false,
+        movementX: 0,
+        movementY: 0
     }
 };
 
@@ -81,6 +83,8 @@ document.addEventListener('keyup', (e) => {
 document.addEventListener('mousemove', (e) => {
     input.mouse.x = e.clientX;
     input.mouse.y = e.clientY;
+    input.mouse.movementX = e.movementX;
+    input.mouse.movementY = e.movementY;
 });
 
 document.addEventListener('mousedown', (e) => {

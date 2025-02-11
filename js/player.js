@@ -12,14 +12,15 @@ Player.prototype.render = function(scene) {
 Player.prototype.step = function(dt, input) {
     // Update facing direction based on mouse
     if (input.mouse.movementX || input.mouse.movementY) {
+        console.log(input.mouse.movementX, input.mouse.movementY);
         let sensitivity = 0.003;
         
-        // Get the current right vector (taking roll into account)
+        // Get the current right vector and up vector (taking roll into account)
         let right = this.getRightVector();
         let up = right.cross(this.facing).normalize();
         
-        // Yaw (rotate around global up axis)
-        this.facing = this.facing.rotateY(-input.mouse.movementX * sensitivity);
+        // Yaw (rotate around local up vector instead of global Y)
+        this.facing = this.facing.rotateAround(up, -input.mouse.movementX * sensitivity);
         
         // Pitch (rotate around right vector)
         this.facing = this.facing.rotateAround(right, -input.mouse.movementY * sensitivity);
