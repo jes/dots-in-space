@@ -9,6 +9,7 @@ let player;
 let canvas;
 
 let stars = [];
+let bullets = [];
 
 // Input state
 const input = {
@@ -46,6 +47,10 @@ function init() {
     render();
 }
 
+function addBullet(pos, vel) {
+    bullets.push(new Bullet(pos, vel));
+}
+
 function render() {
     step();
 
@@ -69,6 +74,10 @@ function render() {
         scene.drawCircle(stars[i], 0.1, 'white');
     }
 
+    for (let i = 0; i < bullets.length; i++) {
+        bullets[i].render(scene);
+    }
+
     scene.render();
 
     window.requestAnimationFrame(render);
@@ -85,6 +94,9 @@ function step() {
     laststep = now;
 
     player.step(dt, input);
+    for (let i = 0; i < bullets.length; i++) {
+        bullets[i].step(dt);
+    }
 
     // Reset mouse movement after each frame
     input.mouse.movementX = 0;

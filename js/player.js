@@ -4,6 +4,8 @@ function Player() {
     // Start with default orientation
     this.facing = new V3d(0, 1, 0);
     this.up = new V3d(0, 0, 1);
+
+    this.lastshot = 0;
 }
 
 Player.prototype.render = function(scene) {
@@ -83,10 +85,23 @@ Player.prototype.step = function(dt, input) {
     }
 
     // Handle mouse input
-    if (input.mouse.clicked) {
-        console.log('Shooting!');
+    if (input.mouse.clicked || input.keys[' ']) {
+        this.shoot();
     }
+};
 
+Player.prototype.shoot = function() {
+    if (Date.now() - this.lastshot < 100) return;
+    this.lastshot = Date.now();
+    
+    // Offset bullet spawn position by 1 unit down in player's coordinate system
+    let spawnPos = this.pos.sub(this.up.normalize());
+    
+    // Bullet inherits player velocity and adds speed in facing direction
+    const BULLET_SPEED = 20;
+    let bulletVelocity = this.facing.mul(BULLET_SPEED).add(this.vel);
+    
+    addBullet(spawnPos, bulletVelocity);
 };
 
 Player.prototype.getRightVector = function() {
