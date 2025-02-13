@@ -80,8 +80,16 @@ Player.prototype.step = function(dt, input) {
     this.vel = this.vel.mul(0.999);
 
     if (this.pos.length() > WORLD_RADIUS) {
-        // TODO: sparks, we've hit the celestial sphere
-        this.vel = this.vel.mul(-1);
+        // Get the normal vector pointing inward from the celestial sphere surface
+        let normal = this.pos.normalize().mul(-1);
+        
+        // Reflect velocity across the normal using standard reflection formula
+        // R = V - 2(V·N)N
+        let dotProduct = this.vel.dot(normal);
+        this.vel = this.vel.sub(normal.mul(2 * dotProduct));
+        
+        // Ensure we're not stuck outside the sphere
+        this.pos = this.pos.normalize().mul(WORLD_RADIUS);
     }
 
     // Handle mouse input
