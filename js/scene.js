@@ -14,31 +14,13 @@ function Scene(ctx) {
     this._forward = this.viewdir.normalize();
 }
 
-Scene.prototype.setCamera = function(position, direction, roll = 0) {
+Scene.prototype.setCamera = function(position, direction, up) {
     this.viewpoint = position;
-    this.viewdir = direction.normalize();
+    this._forward = direction.normalize();
     
-    // Precompute the orthonormal basis
-    this._forward = this.viewdir;
-    this._right = new V3d(0, 0, 1).cross(this._forward).normalize();
-    // Handle the case where forward is parallel to up
-    if (this._right.length() < 0.001) {
-        this._right.x = 1;  // Choose arbitrary right vector
-    }
-    this._up = this._forward.cross(this._right).normalize();
-
-    // Apply roll rotation around forward axis if specified
-    if (roll !== 0) {
-        const cos = Math.cos(roll);
-        const sin = Math.sin(roll);
-        
-        // Rotate right and up vectors around forward axis
-        const newRight = this._right.mul(cos).add(this._up.mul(sin));
-        const newUp = this._up.mul(cos).sub(this._right.mul(sin));
-        
-        this._right = newRight.normalize();
-        this._up = newUp.normalize();
-    }
+    // Construct orthonormal basis from forward and up vectors
+    this._right = this._forward.cross(up).normalize();
+    this._up = this._right.cross(this._forward).normalize();
 };
 
 Scene.prototype.drawCircle = function(pos, r, col) {

@@ -58,7 +58,7 @@ function render() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const scene = new Scene(ctx);
-    scene.setCamera(player.pos, player.facing, player.roll);
+    scene.setCamera(player.pos, player.facing, player.up);
 
     scene.drawCircle(new V3d(0, 10, 0), 1, 'red');
     scene.drawCircle(new V3d(1, 5, 0), 0.5, 'blue');

@@ -1,34 +1,54 @@
 function Player() {
     this.pos = new V3d(0, 0, 0);
     this.vel = new V3d(0, 0, 0);
+    // Start with default orientation
     this.facing = new V3d(0, 1, 0);
-    this.roll = 0;  // Add roll angle tracking
+    this.up = new V3d(0, 0, 1);
 }
 
 Player.prototype.render = function(scene) {
 };
 
 Player.prototype.step = function(dt, input) {
-    // Update facing direction based on mouse
+    // Update orientation based on mouse
     if (input.mouse.movementX || input.mouse.movementY) {
-        console.log(input.mouse.movementX, input.mouse.movementY);
         let sensitivity = 0.003;
         
-        // Get the current right vector and up vector (taking roll into account)
-        let right = this.getRightVector();
-        let up = right.cross(this.facing).normalize();
+        // For any mouse movement, rotate both vectors together as a rigid frame
+        let right = this.facing.cross(this.up).normalize();
         
-        // Yaw (rotate around local up vector instead of global Y)
-        this.facing = this.facing.rotateAround(up, -input.mouse.movementX * sensitivity);
+        // Combined rotation axis based on mouse movement (flipped signs)
+        let rotationAxis = right.mul(-input.mouse.movementY).add(this.up.mul(-input.mouse.movementX));
+        let rotationAmount = Math.sqrt(
+            input.mouse.movementX * input.mouse.movementX + 
+            input.mouse.movementY * input.mouse.movementY
+        ) * sensitivity;
         
-        // Pitch (rotate around right vector)
-        this.facing = this.facing.rotateAround(right, input.mouse.movementY * sensitivity);
+        // Rotate both vectors around the combined axis
+        if (rotationAmount > 0) {
+            this.facing = this.facing.rotateAround(rotationAxis.normalize(), rotationAmount);
+            this.up = this.up.rotateAround(rotationAxis.normalize(), rotationAmount);
+        }
+        
+        // Ensure orthonormal basis
         this.facing = this.facing.normalize();
+        right = this.facing.cross(this.up).normalize();
+        this.up = right.cross(this.facing).normalize();
+    }
+
+    // Handle roll separately
+    if (input.keys['q']) {
+        this.facing = this.facing.rotateAround(this.facing, dt * 0.5);
+        this.up = this.up.rotateAround(this.facing, dt * 0.5);
+    }
+    if (input.keys['e']) {
+        this.facing = this.facing.rotateAround(this.facing, -dt * 0.5);
+        this.up = this.up.rotateAround(this.facing, -dt * 0.5);
     }
 
     // Movement relative to facing direction
     let moveDir = new V3d(0, 0, 0);
-    let right = this.getRightVector();
+    let right = this.facing.cross(this.up).normalize();
     
     if (input.keys['w'] || input.keys['arrowup']) {
         moveDir = moveDir.add(this.facing);
@@ -41,12 +61,6 @@ Player.prototype.step = function(dt, input) {
     }
     if (input.keys['d'] || input.keys['arrowright']) {
         moveDir = moveDir.add(right);
-    }
-    if (input.keys['q']) {
-        this.roll += dt * 0.5;
-    }
-    if (input.keys['e']) {
-        this.roll -= dt * 0.5;
     }
 
     // Apply thrust in movement direction
@@ -76,10 +90,7 @@ Player.prototype.step = function(dt, input) {
 };
 
 Player.prototype.getRightVector = function() {
-    // Get right vector by crossing facing direction with world forward
-    let worldForward = new V3d(0, 0, 1);
-    let right = this.facing.cross(worldForward).normalize().mul(-1);
-    
-    // Apply roll rotation around the facing vector
+    // Simply get right vector from facing and up, then apply roll
+    let right = this.facing.cross(this.up).normalize();
     return right.rotateAround(this.facing, this.roll);
 };
