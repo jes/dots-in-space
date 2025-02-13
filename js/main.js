@@ -9,6 +9,7 @@ let player;
 let canvas;
 
 let stars = [];
+let worldLights = [];
 let bullets = [];
 
 // Input state
@@ -44,6 +45,19 @@ function init() {
         stars.push(new V3d(x, y, z));
     }
 
+    // Generate world lights just above the surface
+    const LIGHT_RADIUS = 10.1; // Slightly larger than occlusion sphere radius (10)
+    for (let i = 0; i < 300; i++) {
+        const theta = Math.random() * 2 * Math.PI;
+        const phi = Math.acos(2 * Math.random() - 1);
+        
+        const x = LIGHT_RADIUS * Math.sin(phi) * Math.cos(theta);
+        const y = LIGHT_RADIUS * Math.sin(phi) * Math.sin(theta);
+        const z = LIGHT_RADIUS * Math.cos(phi);
+        
+        worldLights.push(new V3d(x, y, z));
+    }
+
     render();
 }
 
@@ -59,7 +73,7 @@ function render() {
         resize(canvas);
     }
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = 'rgba(1,1,1,0.3)';
+    ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const scene = new Scene(ctx);
@@ -71,12 +85,19 @@ function render() {
     player.render(scene);
     
     for (let i = 0; i < stars.length; i++) {
-        scene.drawCircle(stars[i], 0.1, 'white');
+        scene.drawCircle(stars[i], 0.08, 'white');
+    }
+
+    // Render world lights
+    for (let i = 0; i < worldLights.length; i++) {
+        scene.drawCircle(worldLights[i], 0.15, 'yellow');
     }
 
     for (let i = 0; i < bullets.length; i++) {
         bullets[i].render(scene);
     }
+
+    scene.addOcclusionSphere(new V3d(0, 0, 0), 10);
 
     scene.render();
 
@@ -94,9 +115,13 @@ function step() {
     laststep = now;
 
     player.step(dt, input);
-    for (let i = 0; i < bullets.length; i++) {
-        bullets[i].step(dt);
-    }
+    
+    // Update and filter bullets
+    bullets = bullets.filter(bullet => {
+        bullet.step(dt);
+        // Remove bullets that go beyond WORLD_RADIUS
+        return bullet.pos.length() <= WORLD_RADIUS;
+    });
 
     // Reset mouse movement after each frame
     input.mouse.movementX = 0;

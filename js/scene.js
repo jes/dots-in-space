@@ -7,7 +7,8 @@ function Scene(ctx) {
     this.fov = 90; // Field of view in degrees
     this.distscale = 2;
     this.circles = [];
-    
+    this.occlusionSpheres = [];
+
     // Initialize view basis vectors
     this._right = new V3d(1,0,0);
     this._up = new V3d(0,0,1);
@@ -23,6 +24,10 @@ Scene.prototype.setCamera = function(position, direction, up) {
     this._up = this._right.cross(this._forward).normalize();
 };
 
+Scene.prototype.addOcclusionSphere = function(pos, r) {
+    this.occlusionSpheres.push({pos, r});
+};
+
 Scene.prototype.drawCircle = function(pos, r, col) {
     let circle = this.project(pos, r);
     if (!circle) return;
@@ -34,24 +39,47 @@ Scene.prototype.drawCircle = function(pos, r, col) {
 
 Scene.prototype.render = function() {
     this.ctx.globalCompositeOperation = 'lighter';
-    this.ctx.globalAlpha = 0.2;
-
-    // sort circles by distance (not needed in additive blending mode)
-    /*this.circles.sort((a,b) => {
-        return a.dist - b.dist;
-    });*/
-
-    // TODO: circle occlusion; set circle.occluded = true if it is occluded by a dark sphere
+    this.ctx.globalAlpha = 1;
 
     for (let circle of this.circles) {
-        if (circle.occluded) continue;
+        // Check for occlusion
+        const pos = circle.pos;
+        const dir = pos.sub(this.viewpoint).normalize();
+        const dist = pos.sub(this.viewpoint).length();
+        
+        let isOccluded = false;
+        for (let sphere of this.occlusionSpheres) {
+            // Vector from sphere center to ray origin (camera)
+            const sphereToCamera = this.viewpoint.sub(sphere.pos);
+            
+            // Calculate closest approach using quadratic equation
+            const a = dir.dot(dir);  // Should be 1 since dir is normalized
+            const b = 2 * sphereToCamera.dot(dir);
+            const c = sphereToCamera.dot(sphereToCamera) - (sphere.r * sphere.r);
+            
+            const discriminant = b * b - 4 * a * c;
+            
+            // If discriminant >= 0, ray intersects sphere
+            if (discriminant >= 0) {
+                // Calculate intersection distance
+                const t = (-b - Math.sqrt(discriminant)) / (2 * a);
+                // Check if intersection is between camera and circle (with small epsilon)
+                if (t > 0 && t < dist - 0.0001) {
+                    isOccluded = true;
+                    break;
+                }
+            }
+        }
+        
+        if (isOccluded) continue;
 
+        // Draw the circle if not occluded
         this.ctx.fillStyle = circle.col;
-
         this.ctx.beginPath();
         this.ctx.arc(circle.x, circle.y, circle.r, 0, fullcircle);
         this.ctx.fill();
     }
+    
     this.ctx.globalCompositeOperation = 'source-over';
     this.ctx.globalAlpha = 1.0;
 };
@@ -82,6 +110,7 @@ Scene.prototype.project = function(pos, r) {
     const screenr = (this.ctx.canvas.width/2) * (r / viewY) * projectionScale;
 
     return {
+        pos: pos,
         x: screenx,
         y: screeny,
         dist: dist,

@@ -98,7 +98,7 @@ Player.prototype.shoot = function() {
     let spawnPos = this.pos.sub(this.up.normalize());
     
     // Bullet inherits player velocity and adds speed in facing direction
-    const BULLET_SPEED = 20;
+    const BULLET_SPEED = 200;
     let bulletVelocity = this.facing.mul(BULLET_SPEED).add(this.vel);
     
     addBullet(spawnPos, bulletVelocity);
